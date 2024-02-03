@@ -1,0 +1,7 @@
+/*
+TODO:
+  1.implement run loop
+  2.implement LDA,TAX,INX,BRK
+  3.implement flag setters
+  4. ...
+*/

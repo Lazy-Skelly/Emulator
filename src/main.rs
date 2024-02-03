@@ -2,10 +2,7 @@
 #[allow(non_snake_case)]
 #[allow(dead_code)]
 
-
-
-
-enum Adressing_mode{
+pub enum Adressing_mode{
     Immediate,
     Zeropage,
     Zeropage_X,
@@ -26,14 +23,7 @@ pub struct Cpu{
 }
 
 
-
-
-
-
-
-
-
-
+  
 impl Cpu{
     pub fn new() -> Self { 
         Cpu {
@@ -45,63 +35,7 @@ impl Cpu{
             memory : [0 ; 0x10000],
 
         }}
-        pub fn Set_carry_flag(&mut self, stat:bool){
-            if stat{
-                self.status = self.status | 0b00000001;
-            }else{
-                self.status = self.status & 0b11111110;
-            }
-        }
-    
-        pub fn Set_zero_flag(&mut self, stat:bool){
-            if stat{
-                self.status = self.status | 0b00000010;
-            }else{
-                self.status = self.status & 0b11111101;
-            }
-        }
-    
-        pub fn Set_interupt_flag(&mut self, stat:bool){
-            if stat{
-                self.status = self.status | 0b00000100;
-            }else{
-                self.status = self.status & 0b11111011;
-            }
-        }
-    
-        pub fn Set_decimal_flag(&mut self, stat:bool){
-            if stat{
-                self.status = self.status | 0b00001000;
-            }else{
-                self.status = self.status & 0b11110111;
-            }
-        }
-    
-        pub fn Set_b_flag(&mut self, stat:bool){
-            if stat{
-                self.status = self.status | 0b00010000;
-            }else{
-                self.status = self.status & 0b11101111;
-            }
-        }
-    
-        pub fn Set_overflow_flag(&mut self, stat:bool){
-            if stat{
-                self.status = self.status | 0b01000000;
-            }else{
-                self.status = self.status & 0b10111111;
-            }
-        }
-    
-        pub fn Set_negative_flag(&mut self, stat:bool){
-            if stat{
-                self.status = self.status | 0b10000000;
-            }else{
-                self.status = self.status & 0b01111111;
-            }
-        }
-    
-    
+  
     pub fn BRK(&mut self){
             //push(self.pc); push(self.status);
             self.status = self.status | 0b00010000;
@@ -109,9 +43,7 @@ impl Cpu{
             self.pc = self.pc | ((self.memory[0xFFFE] as u16)*256);            
         
         }
-    pub fn INX(&mut self){ 
-
-        
+    pub fn INX(&mut self){        
         let x = self.reg_x;
         if x == 0b11111111 {
             self.Set_zero_flag(true);
@@ -128,11 +60,101 @@ impl Cpu{
          
     }
 
-
+    pub fn LDA(&mut self, mode :Adressing_mode){
+        match mode {
+            Adressing_mode::Immediate => {
+                let x = self.memory[self.pc as usize];
+                self.reg_a = x;
+                if x == 0 {
+                    self.Set_zero_flag(true);
+                }else{
+                    self.Set_zero_flag(false);
+                }
+                if 0b10000000 == 0b10000000 & x {
+                    self.Set_negative_flag(true);
+                }else{
+                    self.Set_negative_flag(false);
+                }
+                self.reg_a = x;
+            }
+            _ => (),
+            
+        }
+    }
     
+    pub fn TAX(&mut self){
+        self.reg_a = self.reg_x;
+        let x = self.reg_a;
+        if x == 0 {
+            self.Set_zero_flag(true);
+        }else{
+            self.Set_zero_flag(false);
+        }
+        if 0b10000000 == 0b10000000 & x {
+            self.Set_negative_flag(true);
+        }else{
+            self.Set_negative_flag(false);
+        }
+    }
     
-
-
+    pub fn Set_carry_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b00000001;
+        }else{
+            self.status = self.status & 0b11111110;
+        }
+    }
+    
+    pub fn Set_zero_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b00000010;
+        }else{
+            self.status = self.status & 0b11111101;
+        }
+    }
+    
+    pub fn Set_interupt_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b00000100;
+        }else{
+            self.status = self.status & 0b11111011;
+        }
+    }
+    
+    pub fn Set_decimal_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b00001000;
+        }else{
+            self.status = self.status & 0b11110111;
+        }
+    }
+    
+    pub fn Set_b_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b00010000;
+        }else{
+            self.status = self.status & 0b11101111;
+        }
+    }
+    
+    pub fn Set_overflow_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b01000000;
+        }else{
+            self.status = self.status & 0b10111111;
+        }
+    }
+    
+    pub fn Set_negative_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b10000000;
+        }else{
+            self.status = self.status & 0b01111111;
+        }
+    }
+    
+}
+#[allow(non_camel_case_types)]
 struct opcode{
     pub name : String,
     pub code : u8,
@@ -154,13 +176,4 @@ impl opcode{
 
 
 fn main() {
-  
-    
-
-
-
-
-
-
-   
 }
