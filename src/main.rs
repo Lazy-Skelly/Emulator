@@ -40,7 +40,7 @@ impl Cpu{
                 if x == 0 {
                     self.Set_zero_flag(true);
                 }else{
-                    self.Set_negative_flag(false);
+                    self.Set_zero_flag(false);
                 }
                 if 0b10000000 == 0b10000000 & x {
                     self.Set_negative_flag(true);
@@ -60,7 +60,7 @@ impl Cpu{
         if x == 0 {
             self.Set_zero_flag(true);
         }else{
-            self.Set_negative_flag(false);
+            self.Set_zero_flag(false);
         }
         if 0b10000000 == 0b10000000 & x {
             self.Set_negative_flag(true);
