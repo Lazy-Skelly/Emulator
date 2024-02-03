@@ -26,7 +26,7 @@ impl Cpu{
             reg_x : 0,
             reg_y : 0,
             pc : 0,
-            status : 0,
+            status : 0b00100000,
             memory : [0 ; 0xFFFF],
 
         }
@@ -69,11 +69,51 @@ impl Cpu{
         }
     }
     
+    pub fn Set_carry_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b00000001;
+        }else{
+            self.status = self.status & 0b11111110;
+        }
+    }
+    
     pub fn Set_zero_flag(&mut self, stat:bool){
         if stat{
             self.status = self.status | 0b00000010;
         }else{
             self.status = self.status & 0b11111101;
+        }
+    }
+    
+    pub fn Set_interupt_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b00000100;
+        }else{
+            self.status = self.status & 0b11111011;
+        }
+    }
+    
+    pub fn Set_decimal_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b00001000;
+        }else{
+            self.status = self.status & 0b11110111;
+        }
+    }
+    
+    pub fn Set_b_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b00010000;
+        }else{
+            self.status = self.status & 0b11101111;
+        }
+    }
+    
+    pub fn Set_overflow_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b01000000;
+        }else{
+            self.status = self.status & 0b10111111;
         }
     }
     
@@ -106,5 +146,6 @@ impl opcode{
 
 
 
-fn main() {    
+fn main() {
+
 }
