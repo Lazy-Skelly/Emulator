@@ -1,5 +1,5 @@
-
-enum Adressing_mode{
+#[allow(non_camel_case_types)]
+pub enum Adressing_mode{
     Immediate,
     Zeropage,
     Zeropage_X,
@@ -31,8 +31,62 @@ impl Cpu{
 
         }
     }
+    
+    pub fn lda(&mut self, mode :Adressing_mode){
+        match mode {
+            Adressing_mode::Immediate => {
+                let x = self.memory[self.pc as usize];
+                self.reg_a = x;
+                if x == 0 {
+                    self.Set_zero_flag(true);
+                }else{
+                    self.Set_negative_flag(false);
+                }
+                if 0b10000000 == 0b10000000 & x {
+                    self.Set_negative_flag(true);
+                }else{
+                    self.Set_negative_flag(false);
+                }
+                self.reg_a = x;
+            }
+            _ => (),
+            
+        }
+    }
+    
+    pub fn tax(&mut self){
+        self.reg_a = self.reg_x;
+        let x = self.reg_a;
+        if x == 0 {
+            self.Set_zero_flag(true);
+        }else{
+            self.Set_negative_flag(false);
+        }
+        if 0b10000000 == 0b10000000 & x {
+            self.Set_negative_flag(true);
+        }else{
+            self.Set_negative_flag(false);
+        }
+    }
+    
+    pub fn Set_zero_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b00000010;
+        }else{
+            self.status = self.status & 0b11111101;
+        }
+    }
+    
+    pub fn Set_negative_flag(&mut self, stat:bool){
+        if stat{
+            self.status = self.status | 0b10000000;
+        }else{
+            self.status = self.status & 0b01111111;
+        }
+    }
+    
 }
-
+#[allow(non_camel_case_types)]
 struct opcode{
     pub name : String,
     pub code : u8,
@@ -52,6 +106,5 @@ impl opcode{
 
 
 
-fn main() {
-   
+fn main() {    
 }
