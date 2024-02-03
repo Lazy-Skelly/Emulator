@@ -50,14 +50,13 @@ impl Cpu{
             self.Set_negative_flag(false);
             self.reg_x = 0b00000000;
         }else{
-        self.reg_x += 1; 
-        if 0b10000000 == 0b10000000 & self.reg_x {
-            self.Set_negative_flag(true);
-        }else{
-            self.Set_negative_flag(false);
-        }
-        }}
-         
+            self.reg_x += 1; 
+            if 0b10000000 == 0b10000000 & self.reg_x {
+                self.Set_negative_flag(true);
+            }else{
+                self.Set_negative_flag(false);
+            }
+        }         
     }
 
     pub fn LDA(&mut self, mode :Adressing_mode){
