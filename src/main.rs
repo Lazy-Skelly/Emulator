@@ -23,7 +23,8 @@ pub struct Cpu{
 }
 
 
-  
+
+#[allow(non_snake_case)]
 impl Cpu{
     pub fn new() -> Self { 
         Cpu {
@@ -35,7 +36,54 @@ impl Cpu{
             memory : [0 ; 0x10000],
 
         }}
-  
+
+
+    pub fn Read_memory(&mut self, adress:u16) -> u8{
+        self.memory[adress as usize]
+    }
+    
+    pub fn Write_memory(&mut self, adress:u16, data:u8){
+        self.memory[adress as usize] = data;
+    }
+    
+    pub fn Read_memory_16(&mut self, adress:u16) ->u16{
+        let low :u16= self.Read_memory(adress) as u16;
+        let high : u16= self.Read_memory(adress +1) as u16;
+        (high << 8) | low
+    }
+    
+    pub fn Write_memory_16(&mut self, adress:u16, data:u16){
+        let high = (data >> 8) as u8;
+        let low = (data & 0xff) as u8;
+        self.Write_memory(adress, low);
+        self.Write_memory(adress+1, high);
+    }
+     
+    pub fn Get_operand_adress(&mut self, mode :Adressing_mode) -> u16{
+        match mode{
+            Adressing_mode::Immediate => self.pc,
+            Adressing_mode::Zeropage => self.Read_memory(self.pc) as u16,
+            Adressing_mode::Zeropage_X => (self.Read_memory_16(self.pc)+self.reg_x as u16) &0xff,
+            Adressing_mode::Zeropage_Y => (self.Read_memory_16(self.pc)+self.reg_y as u16) &0xff,
+            Adressing_mode::Absolute => self.Read_memory_16(self.pc),
+            Adressing_mode::Absolute_X => self.Read_memory_16(self.pc) + self.reg_x as u16,
+            Adressing_mode::Absolute_Y => self.Read_memory_16(self.pc) + self.reg_y as u16,
+            Adressing_mode::Indirect_X  => {
+                let adress = (self.Read_memory_16(self.pc)+self.reg_x as u16) &0xff;
+                let low = self.Read_memory(adress) as u16;
+                let high = self.Read_memory((adress +1)&0xff) as u16;
+                high << 8 | low
+            },
+            Adressing_mode::Indirect_Y => {
+                let adress = self.Read_memory(self.pc) as u16;
+                let low = self.Read_memory(adress) as u16;
+                let high = self.Read_memory((adress+1)&0xff) as u16;
+                let adress = high << 8 | low;
+                adress + self.reg_y as u16
+            },
+        }
+    } 
+     
     pub fn BRK(&mut self){
             //push(self.pc); push(self.status);
             self.status = self.status | 0b00010000;
@@ -153,6 +201,7 @@ impl Cpu{
     }
     
 }
+
 #[allow(non_camel_case_types)]
 struct opcode{
     pub name : String,
@@ -169,10 +218,8 @@ impl opcode{
 /*  ToDo:
         Create Stack {$0100-$0200}
 
+
  */
-
-
-
 
 fn main() {
 }
