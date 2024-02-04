@@ -61,13 +61,13 @@ impl Cpu{
         match mode{
             Adressing_mode::Immediate => self.pc,
             Adressing_mode::Zeropage => self.Read_memory(self.pc) as u16,
-            Adressing_mode::Zeropage_X => ((self.Read_memory(self.pc)+self.reg_x)&0xff) as u16,
-            Adressing_mode::Zeropage_Y => ((self.Read_memory(self.pc)+self.reg_y)&0xff) as u16,
+            Adressing_mode::Zeropage_X => (self.Read_memory_16(self.pc)+self.reg_x as u16) &0xff,
+            Adressing_mode::Zeropage_Y => (self.Read_memory_16(self.pc)+self.reg_y as u16) &0xff,
             Adressing_mode::Absolute => self.Read_memory_16(self.pc),
             Adressing_mode::Absolute_X => self.Read_memory_16(self.pc) + self.reg_x as u16,
             Adressing_mode::Absolute_Y => self.Read_memory_16(self.pc) + self.reg_y as u16,
             Adressing_mode::Indirect_X  => {
-                let adress = ((self.Read_memory(self.pc)+self.reg_x)&0xff) as u16;
+                let adress = (self.Read_memory_16(self.pc)+self.reg_x as u16) &0xff;
                 let low = self.Read_memory(adress) as u16;
                 let high = self.Read_memory((adress +1)&0xff) as u16;
                 high << 8 | low
@@ -219,11 +219,4 @@ impl opcode{
  */
 
 fn main() {
-    let mut c = Cpu::new();
-    c.Write_memory(0,5);
-    c.Write_memory(1,5);
-    println!("{}",c.Read_memory_16(0));
-    c.Write_memory_16(1,0x0000);
-    println!("{}",c.Read_memory(2));
-    println!("{}",c.Get_operand_adress())
 }
