@@ -12,6 +12,7 @@ pub enum Adressing_mode{
     Absolute_Y,
     Indirect_X,
     Indirect_Y,
+    No_Adress
    }
 pub struct Cpu{
     pub reg_a : u8,
@@ -21,7 +22,6 @@ pub struct Cpu{
     pub status : u8,
     pub memory : [u8 ; 0x10000],
 }
-
 
 
 #[allow(non_snake_case)]
@@ -36,7 +36,6 @@ impl Cpu{
             memory : [0 ; 0x10000],
 
         }}
-
 
     pub fn Read_memory(&mut self, adress:u16) -> u8{
         self.memory[adress as usize]
@@ -81,6 +80,10 @@ impl Cpu{
                 let adress = high << 8 | low;
                 adress + self.reg_y as u16
             },
+            Adressing_mode::No_Adress => {
+                assert!(false, "There is no memory adressing");
+                0x00
+            }
         }
     } 
      
@@ -89,7 +92,7 @@ impl Cpu{
             self.status = self.status | 0b00010000;
             self.pc = 0x0000 | (self.memory[0xFFFE] as u16);
             self.pc = self.pc | ((self.memory[0xFFFE] as u16)*256);            
-        
+            
         }
     pub fn INX(&mut self){        
         let x = self.reg_x;
@@ -107,31 +110,52 @@ impl Cpu{
         }         
     }
 
-    pub fn LDA(&mut self, mode :Adressing_mode){
-        match mode {
-            Adressing_mode::Immediate => {
-                let x = self.memory[self.pc as usize];
-                self.reg_a = x;
-                if x == 0 {
-                    self.Set_zero_flag(true);
-                }else{
-                    self.Set_zero_flag(false);
-                }
-                if 0b10000000 == 0b10000000 & x {
-                    self.Set_negative_flag(true);
-                }else{
-                    self.Set_negative_flag(false);
-                }
-                self.reg_a = x;
-            }
-            _ => (),
-            
-        }
+    pub fn LDA(&mut self, code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        let x = self.Read_memory(adress);
+        self.pc += code.length -1;
+        self.reg_a = x;
+        self.Set_zero_negative(x);
     }
     
+    pub fn LDX(&mut self, code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        let x = self.Read_memory(adress);
+        self.pc += code.length -1;
+        self.reg_x = x;
+        self.Set_zero_negative(x);
+    }
+
+    pub fn LDY(&mut self, code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        let x = self.Read_memory(adress);
+        self.pc += code.length -1;
+        self.reg_y = x;
+        self.Set_zero_negative(x);
+       
+    }
+    
+    pub fn LSR(&mut self, code :opcode){
+        if let Adressing_mode::No_Adress = code.mode{
+            self.Set_carry_flag((self.reg_a & 0x01)== 1);
+            self.reg_a = self.reg_a >> 1;
+            self.Set_zero_negative(self.reg_a);
+        }else{
+            let adress = self.Get_operand_adress(code.mode);
+            self.Set_carry_flag((self.memory[adress as usize] & 0x01)== 1);
+            self.memory[adress as usize] = self.memory[adress as usize] >> 1;
+            self.Set_zero_negative(self.memory[adress as usize]);
+        }
+        self.pc += code.length -1;
+    }    
+        
     pub fn TAX(&mut self){
         self.reg_a = self.reg_x;
         let x = self.reg_a;
+        self.Set_zero_negative(x);
+    }
+
+    pub fn Set_zero_negative(&mut self, x:u8){
         if x == 0 {
             self.Set_zero_flag(true);
         }else{
@@ -203,23 +227,34 @@ impl Cpu{
 }
 
 #[allow(non_camel_case_types)]
-struct opcode{
+pub struct opcode{
     pub name : String,
     pub code : u8,
-    pub length : u8,
+    pub length : u16,
     pub cycle : u8,
     pub mode : Adressing_mode,
 }
 impl opcode{
-    fn new(s : String, c : u8,l : u8, cy : u8 , a : Adressing_mode) -> Self {
+    fn new(s : String, c : u8,l : u16, cy : u8 , a : Adressing_mode) -> Self {
         opcode { name: (s), code: (c), length: (l), cycle: (cy), mode: (a) }
     }
 }
 /*  ToDo:
         Create Stack {$0100-$0200}
 
-
  */
 
 fn main() {
+    let mut c = Cpu::new();
+    let b = opcode::new("LSR".to_string(),0x4a,1,2,Adressing_mode::Immediate);
+    c.Write_memory(0,0);
+    c.Write_memory(1,5);
+    c.Write_memory(0x0609,75);
+    c.Write_memory(5,10);
+    c.Write_memory(6,5);
+    c.reg_a = 0xf0;
+    c.reg_x = 1;
+    c.LSR(b);
+    println!("{}",c.status);
+    println!("{}",c.memory[0]);
 }
