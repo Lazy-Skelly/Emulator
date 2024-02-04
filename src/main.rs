@@ -23,6 +23,7 @@ pub struct Cpu{
 }
 
 
+
 #[allow(non_snake_case)]
 impl Cpu{
     pub fn new() -> Self { 
@@ -35,6 +36,7 @@ impl Cpu{
             memory : [0 ; 0x10000],
 
         }}
+
 
     pub fn Read_memory(&mut self, adress:u16) -> u8{
         self.memory[adress as usize]
@@ -215,6 +217,7 @@ impl opcode{
 }
 /*  ToDo:
         Create Stack {$0100-$0200}
+
 
  */
 
