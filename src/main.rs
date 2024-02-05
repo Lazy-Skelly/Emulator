@@ -147,7 +147,63 @@ impl Cpu{
             self.Set_zero_negative(self.memory[adress as usize]);
         }
         self.pc += code.length -1;
-    }    
+    }
+    
+    pub fn NOP(&mut self, _code :opcode){}
+    
+    pub fn ORA(&mut self, code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        let x = self.Read_memory(adress);
+        self.reg_a = self.reg_a | x;
+        self.pc += code.length -1;
+    }
+    
+    pub fn ROL(&mut self, code :opcode){
+        if let Adressing_mode::No_Adress = code.mode{
+            let c = self.reg_a & 0x80 == 0x80;
+            self.reg_a = self.reg_a << 1;
+            if self.status & 0x01 == 0x01 {
+                self.reg_a += 1;
+            }
+            self.Set_carry_flag(c);
+            self.pc += code.length -1;
+        }else{
+            let adress = self.Get_operand_adress(code.mode);
+            let c = self.memory[adress as usize] & 0x80 == 0x80;
+            self.memory[adress as usize] = self.memory[adress as usize] << 1;
+            if self.status & 0x01 == 0x01 {
+                self.memory[adress as usize] += 1;
+            }
+            self.Set_carry_flag(c);
+            self.pc += code.length -1;
+        }
+    }
+    
+    pub fn ROR(&mut self, code :opcode){
+        if let Adressing_mode::No_Adress = code.mode{
+            let c = self.reg_a & 0x01 == 0x01;
+            self.reg_a = self.reg_a >> 1;
+            if self.status & 0x01 == 0x01 {
+                self.reg_a += 0x80;
+            }
+            self.Set_carry_flag(c);
+            self.pc += code.length -1;
+        }else{
+            let adress = self.Get_operand_adress(code.mode);
+            let c = self.memory[adress as usize] & 0x01 == 0x01;
+            self.memory[adress as usize] = self.memory[adress as usize] >> 1;
+            if self.status & 0x01 == 0x01 {
+                self.memory[adress as usize] += 0x80;
+            }
+            self.Set_carry_flag(c);
+            self.pc += code.length -1;
+        }
+    } 
+    
+    pub fn SBC(&mut self, code :opcode){
+        
+        self.add_to_register_a(((data as i8).wrapping_neg().wrapping_sub(1)) as u8);
+    }
         
     pub fn TAX(&mut self){
         self.reg_a = self.reg_x;
@@ -247,14 +303,12 @@ impl opcode{
 fn main() {
     let mut c = Cpu::new();
     let b = opcode::new("LSR".to_string(),0x4a,1,2,Adressing_mode::Immediate);
-    c.Write_memory(0,0);
-    c.Write_memory(1,5);
-    c.Write_memory(0x0609,75);
-    c.Write_memory(5,10);
-    c.Write_memory(6,5);
-    c.reg_a = 0xf0;
-    c.reg_x = 1;
-    c.LSR(b);
-    println!("{}",c.status);
+    c.status = 33;
+    c.Write_memory(0,0x01);
+    c.reg_a = 0x01;
+    
+    c.ROR(b);
+    println!("{}",c.reg_a);
     println!("{}",c.memory[0]);
+    println!("{}",c.status);
 }
