@@ -219,6 +219,7 @@ impl Cpu{
             }
             
         }
+        self.nextpc();
     }
     pub fn Set_zero_negative(&mut self, x:u8){
         if x == 0 {
