@@ -125,6 +125,7 @@ impl Cpu{
             self.pc = self.pc | ((self.memory[0xFFFE] as u16)*256);            
             
         }
+    
     pub fn INX(&mut self){        
         let x = self.reg_x;
         if x == 0b11111111 {
@@ -185,6 +186,7 @@ impl Cpu{
         let x = self.reg_a;
         self.Set_zero_negative(x);
     }
+    
     pub fn AND(&mut self, mode :Adressing_mode){
         let adress = self.Get_operand_adress(mode);
         self.reg_a = self.reg_a & self.Read_memory(adress) as u8;
@@ -196,18 +198,23 @@ impl Cpu{
         }
         self.nextpc();
     }
+    
     pub fn CLV(&mut self){
         self.status = self.status & 0b10111111;
     }
+    
     pub fn CLI(&mut self){
         self.status = self.status & 0b11111011;
     }
+    
     pub fn CLD(&mut self){
         self.status = self.status & 0b11110111;
     }
+    
     pub fn CLC(&mut self){
         self.status = self.status & 0b11111110;
     }
+    
     pub fn BVS(&mut self,code : opcode){
         let adress = self.Get_operand_adress(code.mode);
         let x = self.Read_memory(adress);
@@ -222,6 +229,70 @@ impl Cpu{
         }
         self.nextpc();
     }
+    
+    pub fn BVC(&mut self,code : opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        let x = self.Read_memory(adress);
+        if (self.status & 64 == 0b00000000){
+            if(  x >= 0b10000000){
+                self.pc -= !x as u16 + 1; 
+            }
+            else{
+                self.pc += x as u16;
+            }
+            
+        }
+        self.nextpc();
+    }
+    
+    pub fn BPL(&mut self,code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        let x = self.Read_memory(adress);
+        if (self.status & 0b10000000 == 0b00000000){
+            if(  x >= 0b10000000){
+                self.pc -= !x as u16 + 1; 
+            }
+            else{
+                self.pc += x as u16;
+            }
+            
+        }
+        self.nextpc();
+
+    }
+
+    pub fn BNL(&mut self,code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        let x = self.Read_memory(adress);
+        if (self.status & 0b00000010 == 0b00000000){
+            if(  x >= 0b10000000){
+                self.pc -= !x as u16 + 1; 
+            }
+            else{
+                self.pc += x as u16;
+            }
+            
+        }
+        self.nextpc();
+
+    }
+
+    pub fn BMI(&mut self,code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        let x = self.Read_memory(adress);
+        if (self.status & 0b10000000 == 0b10000000){
+            if(  x >= 0b10000000){
+                self.pc -= !x as u16 + 1; 
+            }
+            else{
+                self.pc += x as u16;
+            }
+            
+        }
+        self.nextpc();
+
+    }
+    
     pub fn Set_zero_negative(&mut self, x:u8){
         if x == 0 {
             self.Set_zero_flag(true);
