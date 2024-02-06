@@ -39,7 +39,7 @@ impl Cpu{
 
         }}
     pub fn  nextpc(&mut self){
-        if(self.pc != 0xFFFF){
+        if self.pc != 0xFFFF {
         self.pc = self.pc + 1;}
         else{
             println!(r"¯\_(ツ)_/¯");
@@ -48,7 +48,7 @@ impl Cpu{
     }
     pub fn push(&mut self, val : u8){
         
-        if(self.stack != 0xFF){
+        if self.stack != 0xFF {
         self.stack += 1;
         self.Write_memory(0x0100 + self.stack as u16, val);}
         else{self.stack = 0x01;
@@ -58,7 +58,7 @@ impl Cpu{
     pub fn pop(&mut self) -> u8{
         let x : u8;
         
-        if(self.stack != 0x00){
+        if self.stack != 0x00 {
             x = self.Read_memory(0x0100+self.stack as u16);
             self.stack -=1;}
         else{
@@ -118,15 +118,16 @@ impl Cpu{
         }
     } 
      
-    pub fn AND(&mut self, mode :Adressing_mode){
-        let adress = self.Get_operand_adress(mode);
+    pub fn AND(&mut self, code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
         self.reg_a = self.reg_a & self.Read_memory(adress) as u8;
-        if(self.reg_a == 0x00){
+        if self.reg_a == 0x00 {
             self.status = self.status | 0b00000010;
         }
-        if (self.status >= 0b10000000){
+        if self.status >= 0b10000000 {
             self.status = self.status | 0b10000000;
         }
+        self.pc += code.length -1;
     }
     pub fn CLV(&mut self){
         self.status = self.status & 0b10111111;
@@ -143,8 +144,8 @@ impl Cpu{
     pub fn BVS(&mut self,code : opcode){
         let adress = self.Get_operand_adress(code.mode);
         let x = self.Read_memory(adress);
-        if (self.status & 64 == 0b01000000){
-            if(  x >= 0b10000000){
+        if self.status & 64 == 0b01000000{
+            if x >= 0b10000000{
                 self.pc -= !x as u16 + 1; 
             }
             else{
@@ -152,7 +153,7 @@ impl Cpu{
             }
             
         }
-        self.nextpc();
+        self.pc += code.length -1;
     }
   
     pub fn BRK(&mut self){
@@ -184,6 +185,7 @@ impl Cpu{
         self.pc += code.length -1;
         self.reg_a = x;
         self.Set_zero_negative(x);
+        self.pc += code.length -1;
     }
     
     pub fn LDX(&mut self, code :opcode){
@@ -192,6 +194,7 @@ impl Cpu{
         self.pc += code.length -1;
         self.reg_x = x;
         self.Set_zero_negative(x);
+        self.pc += code.length -1;
     }
 
     pub fn LDY(&mut self, code :opcode){
@@ -200,7 +203,7 @@ impl Cpu{
         self.pc += code.length -1;
         self.reg_y = x;
         self.Set_zero_negative(x);
-       
+        self.pc += code.length -1;
     }
     
     pub fn LSR(&mut self, code :opcode){
@@ -224,6 +227,23 @@ impl Cpu{
         let x = self.Read_memory(adress);
         self.reg_a = self.reg_a | x;
         self.pc += code.length -1;
+    }
+    
+    pub fn PHA(&mut self, _code :opcode){
+        self.push(self.reg_a);
+    }
+    
+    pub fn PHP(&mut self, _code :opcode){
+        self.push(self.status);
+    }
+    
+    pub fn PLA(&mut self, _code :opcode){
+        self.reg_a = self.pop();
+        self.Set_zero_negative(self.reg_a);
+    }
+    
+    pub fn PLP(&mut self, _code :opcode){
+        self.status = self.pop();
     }
     
     pub fn ROL(&mut self, code :opcode){
@@ -266,7 +286,23 @@ impl Cpu{
             self.Set_carry_flag(c);
             self.pc += code.length -1;
         }
-    } 
+    }
+    
+    pub fn RTI(&mut self, _code :opcode){
+        self.status = self.pop();
+        let low = self.pop() as u16;
+        let mut high = self.pop() as u16;
+        high = high << 8;
+        self.pc = high | low;
+    }
+    
+    pub fn RTS(&mut self, _code :opcode){
+        self.status = self.pop();
+        let low = self.pop() as u16;
+        let mut high = self.pop() as u16;
+        high = high << 8;
+        self.pc = high | low -1;
+    }
     
     pub fn SBC(&mut self, code :opcode){
         
@@ -341,6 +377,10 @@ impl Cpu{
         self.reg_a = self.reg_x;
         let x = self.reg_a;
         self.Set_zero_negative(x);
+    }
+    
+    pub fn TXS(&mut self){
+        self.push(self.reg_x);
     }
 
     pub fn TYA(&mut self){
@@ -433,23 +473,18 @@ impl opcode{
         opcode { name: (s), code: (c), length: (l), cycle: (cy), mode: (a) }
     }
 }
-/*  ToDo:
-        Create Stack {$0100-$0200}
-
- */
 
 fn main() {
     let mut c = Cpu::new();
     let b = opcode::new("LSR".to_string(),0x4a,1,2,Adressing_mode::Immediate);
     c.Write_memory(0,0);
-    c.Write_memory(1,5);
-    c.Write_memory(0x0609,75);
-    c.Write_memory(5,10);
-    c.Write_memory(6,5);
     c.reg_a = 0xf0;
-    c.reg_x = 1;
-    c.LSR(b);
+    c.reg_x = 0xf0;
+    c.push(0xff);
+    c.push(0x01);
+    c.push(132);
+    c.RTS(b);
+    println!("{:X}",c.pc);
     println!("{}",c.status);
-    println!("{}",c.memory[0]);
 
 }
