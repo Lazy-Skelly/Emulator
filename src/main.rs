@@ -194,6 +194,7 @@ impl Cpu{
         if (self.status >= 0b10000000){
             self.status = self.status | 0b10000000;
         }
+        self.nextpc();
     }
     pub fn CLV(&mut self){
         self.status = self.status & 0b10111111;
