@@ -202,15 +202,86 @@ impl Cpu{
     
     pub fn SBC(&mut self, code :opcode){
         
-        self.add_to_register_a(((data as i8).wrapping_neg().wrapping_sub(1)) as u8);
+        let adress = self.Get_operand_adress(code.mode);
+        let data = self.Read_memory(adress);
+        let data = (data as i8).wrapping_neg().wrapping_sub(1);
+        let data = data as u8;
+        let result = self.reg_a as u16 + data as u16
+        + (if self.status & 0x01 == 0x01 {
+            1
+        } else{ 
+            0 
+        }) as u16;
+
+        self.Set_carry_flag(result > 0xff);
+        let result = result as u8;
+        
+        if(data as u8 ^ result) & (result ^ self.reg_a) & 0x80 != 0 {
+            self.Set_overflow_flag(true);
+        }else{
+            self.Set_overflow_flag(false);
+        }
+        
+        self.reg_a = result as u8;
+        self.Set_zero_negative(self.reg_a);
+        self.pc += code.length -1;
+    }
+    
+    pub fn SEC(&mut self, _code :opcode){
+        self.Set_carry_flag(true);
+    }
+    
+    pub fn SED(&mut self, _code :opcode){
+        self.Set_decimal_flag(true);
+    }
+    
+    pub fn SEI(&mut self, _code :opcode){
+        self.Set_interupt_flag(true);
+    }
+    
+    pub fn STA(&mut self, code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        self.Write_memory(adress, self.reg_a);
+        self.pc += code.length-1;
+    }
+    
+    pub fn STX(&mut self, code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        self.Write_memory(adress, self.reg_x);
+        self.pc += code.length-1;
+    }
+    
+    pub fn STY(&mut self, code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        self.Write_memory(adress, self.reg_y);
+        self.pc += code.length-1;
     }
         
     pub fn TAX(&mut self){
+        self.reg_x = self.reg_a;
+        let x = self.reg_x;
+        self.Set_zero_negative(x);
+    }
+    
+    pub fn TAY(&mut self){
+        self.reg_y = self.reg_a;
+        let x = self.reg_y;
+        self.Set_zero_negative(x);
+    }
+
+    pub fn TXA(&mut self){
         self.reg_a = self.reg_x;
         let x = self.reg_a;
         self.Set_zero_negative(x);
     }
 
+    pub fn TYA(&mut self){
+        self.reg_a = self.reg_y;
+        let x = self.reg_a;
+        self.Set_zero_negative(x);
+    }
+
+    
     pub fn Set_zero_negative(&mut self, x:u8){
         if x == 0 {
             self.Set_zero_flag(true);
@@ -301,14 +372,4 @@ impl opcode{
  */
 
 fn main() {
-    let mut c = Cpu::new();
-    let b = opcode::new("LSR".to_string(),0x4a,1,2,Adressing_mode::Immediate);
-    c.status = 33;
-    c.Write_memory(0,0x01);
-    c.reg_a = 0x01;
-    
-    c.ROR(b);
-    println!("{}",c.reg_a);
-    println!("{}",c.memory[0]);
-    println!("{}",c.status);
 }
