@@ -21,6 +21,7 @@ pub struct Cpu{
     pub pc : u16,
     pub status : u8,
     pub memory : [u8 ; 0x10000],
+    pub stack : u8,
 }
 
 
@@ -34,9 +35,21 @@ impl Cpu{
             pc : 0b00000000,
             status : 0b00100000,
             memory : [0 ; 0x10000],
+            stack : 0,
 
         }}
+    pub fn push(&mut self, val : u8){
+        
+        if(self.stack != 0xFF){
+        self.stack += 1;
+        self.Write_memory(0x0100 + self.stack as u16, val);}
+        else{self.stack = 0x00;
+            self.Write_memory(0x0100 + self.stack as u16, val);}
 
+    }
+    pub fn pop(&mut self) -> u8{
+    
+    }
     pub fn Read_memory(&mut self, adress:u16) -> u8{
         self.memory[adress as usize]
     }
@@ -154,7 +167,27 @@ impl Cpu{
         let x = self.reg_a;
         self.Set_zero_negative(x);
     }
-
+    pub fn AND(&mut self, mode :Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
+        self.reg_a = self.reg_a & self.Read_memory(adress) as u8;
+    }
+    pub fn CLV(&mut self){
+        self.status = self.status & 0b10111111;
+    }
+    pub fn CLI(&mut self){
+        self.status = self.status & 0b11111011;
+    }
+    pub fn CLD(&mut self){
+        self.status = self.status & 0b11110111;
+    }
+    pub fn CLC(&mut self){
+        self.status = self.status & 0b11111110;
+    }
+    pub fn BVS(&mut self){
+        if (self.status & 64 == 1){
+            
+        }
+    }
     pub fn Set_zero_negative(&mut self, x:u8){
         if x == 0 {
             self.Set_zero_flag(true);
@@ -257,4 +290,17 @@ fn main() {
     c.LSR(b);
     println!("{}",c.status);
     println!("{}",c.memory[0]);
+
+
+
+
+    c.push(13);
+    println!("{}",c.memory[0x0100]);
+    let z :u8;
+    z = c.pop();
+    println!("{}",z);
+
+
+
+
 }
