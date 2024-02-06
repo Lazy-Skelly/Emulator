@@ -118,6 +118,43 @@ impl Cpu{
         }
     } 
      
+    pub fn AND(&mut self, mode :Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
+        self.reg_a = self.reg_a & self.Read_memory(adress) as u8;
+        if(self.reg_a == 0x00){
+            self.status = self.status | 0b00000010;
+        }
+        if (self.status >= 0b10000000){
+            self.status = self.status | 0b10000000;
+        }
+    }
+    pub fn CLV(&mut self){
+        self.status = self.status & 0b10111111;
+    }
+    pub fn CLI(&mut self){
+        self.status = self.status & 0b11111011;
+    }
+    pub fn CLD(&mut self){
+        self.status = self.status & 0b11110111;
+    }
+    pub fn CLC(&mut self){
+        self.status = self.status & 0b11111110;
+    }
+    pub fn BVS(&mut self,code : opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        let x = self.Read_memory(adress);
+        if (self.status & 64 == 0b01000000){
+            if(  x >= 0b10000000){
+                self.pc -= !x as u16 + 1; 
+            }
+            else{
+                self.pc += x as u16;
+            }
+            
+        }
+        self.nextpc();
+    }
+  
     pub fn BRK(&mut self){
             self.push(self.status);//self.push(self.pc);
             self.status = self.status | 0b00010000;
@@ -178,49 +215,140 @@ impl Cpu{
             self.Set_zero_negative(self.memory[adress as usize]);
         }
         self.pc += code.length -1;
-    }    
+    }
+    
+    pub fn NOP(&mut self, _code :opcode){}
+    
+    pub fn ORA(&mut self, code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        let x = self.Read_memory(adress);
+        self.reg_a = self.reg_a | x;
+        self.pc += code.length -1;
+    }
+    
+    pub fn ROL(&mut self, code :opcode){
+        if let Adressing_mode::No_Adress = code.mode{
+            let c = self.reg_a & 0x80 == 0x80;
+            self.reg_a = self.reg_a << 1;
+            if self.status & 0x01 == 0x01 {
+                self.reg_a += 1;
+            }
+            self.Set_carry_flag(c);
+            self.pc += code.length -1;
+        }else{
+            let adress = self.Get_operand_adress(code.mode);
+            let c = self.memory[adress as usize] & 0x80 == 0x80;
+            self.memory[adress as usize] = self.memory[adress as usize] << 1;
+            if self.status & 0x01 == 0x01 {
+                self.memory[adress as usize] += 1;
+            }
+            self.Set_carry_flag(c);
+            self.pc += code.length -1;
+        }
+    }
+    
+    pub fn ROR(&mut self, code :opcode){
+        if let Adressing_mode::No_Adress = code.mode{
+            let c = self.reg_a & 0x01 == 0x01;
+            self.reg_a = self.reg_a >> 1;
+            if self.status & 0x01 == 0x01 {
+                self.reg_a += 0x80;
+            }
+            self.Set_carry_flag(c);
+            self.pc += code.length -1;
+        }else{
+            let adress = self.Get_operand_adress(code.mode);
+            let c = self.memory[adress as usize] & 0x01 == 0x01;
+            self.memory[adress as usize] = self.memory[adress as usize] >> 1;
+            if self.status & 0x01 == 0x01 {
+                self.memory[adress as usize] += 0x80;
+            }
+            self.Set_carry_flag(c);
+            self.pc += code.length -1;
+        }
+    } 
+    
+    pub fn SBC(&mut self, code :opcode){
+        
+        let adress = self.Get_operand_adress(code.mode);
+        let data = self.Read_memory(adress);
+        let data = (data as i8).wrapping_neg().wrapping_sub(1);
+        let data = data as u8;
+        let result = self.reg_a as u16 + data as u16
+        + (if self.status & 0x01 == 0x01 {
+            1
+        } else{ 
+            0 
+        }) as u16;
+
+        self.Set_carry_flag(result > 0xff);
+        let result = result as u8;
+        
+        if(data as u8 ^ result) & (result ^ self.reg_a) & 0x80 != 0 {
+            self.Set_overflow_flag(true);
+        }else{
+            self.Set_overflow_flag(false);
+        }
+        
+        self.reg_a = result as u8;
+        self.Set_zero_negative(self.reg_a);
+        self.pc += code.length -1;
+    }
+    
+    pub fn SEC(&mut self, _code :opcode){
+        self.Set_carry_flag(true);
+    }
+    
+    pub fn SED(&mut self, _code :opcode){
+        self.Set_decimal_flag(true);
+    }
+    
+    pub fn SEI(&mut self, _code :opcode){
+        self.Set_interupt_flag(true);
+    }
+    
+    pub fn STA(&mut self, code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        self.Write_memory(adress, self.reg_a);
+        self.pc += code.length-1;
+    }
+    
+    pub fn STX(&mut self, code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        self.Write_memory(adress, self.reg_x);
+        self.pc += code.length-1;
+    }
+    
+    pub fn STY(&mut self, code :opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        self.Write_memory(adress, self.reg_y);
+        self.pc += code.length-1;
+    }
         
     pub fn TAX(&mut self){
+        self.reg_x = self.reg_a;
+        let x = self.reg_x;
+        self.Set_zero_negative(x);
+    }
+    
+    pub fn TAY(&mut self){
+        self.reg_y = self.reg_a;
+        let x = self.reg_y;
+        self.Set_zero_negative(x);
+    }
+
+    pub fn TXA(&mut self){
         self.reg_a = self.reg_x;
         let x = self.reg_a;
         self.Set_zero_negative(x);
     }
-    pub fn AND(&mut self, mode :Adressing_mode){
-        let adress = self.Get_operand_adress(mode);
-        self.reg_a = self.reg_a & self.Read_memory(adress) as u8;
-        if(self.reg_a == 0x00){
-            self.status = self.status | 0b00000010;
-        }
-        if (self.status >= 0b10000000){
-            self.status = self.status | 0b10000000;
-        }
+
+    pub fn TYA(&mut self){
+        self.reg_a = self.reg_y;
+        let x = self.reg_a;
+        self.Set_zero_negative(x);
     }
-    pub fn CLV(&mut self){
-        self.status = self.status & 0b10111111;
-    }
-    pub fn CLI(&mut self){
-        self.status = self.status & 0b11111011;
-    }
-    pub fn CLD(&mut self){
-        self.status = self.status & 0b11110111;
-    }
-    pub fn CLC(&mut self){
-        self.status = self.status & 0b11111110;
-    }
-    pub fn BVS(&mut self,code : opcode){
-        let adress = self.Get_operand_adress(code.mode);
-        let x = self.Read_memory(adress);
-        if (self.status & 64 == 0b01000000){
-            if(  x >= 0b10000000){
-                self.pc -= !x as u16 + 1; 
-            }
-            else{
-                self.pc += x as u16;
-            }
-            
-        }
-        self.nextpc();
-    }
+
     pub fn Set_zero_negative(&mut self, x:u8){
         if x == 0 {
             self.Set_zero_flag(true);
@@ -323,17 +451,5 @@ fn main() {
     c.LSR(b);
     println!("{}",c.status);
     println!("{}",c.memory[0]);
-
-
-
-
-    c.push(13);
-    println!("{}",c.memory[0x0100]);
-    let z :u8;
-    z = c.pop();
-    println!("{}",z);
-
-
-
 
 }
