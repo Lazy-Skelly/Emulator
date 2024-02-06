@@ -1,7 +1,7 @@
 #[allow(non_camel_case_types)]
 #[allow(non_snake_case)]
 #[allow(dead_code)]
-
+//NV1B DIZC are the flags
 pub enum Adressing_mode{
     Immediate,
     Zeropage,
@@ -21,6 +21,7 @@ pub struct Cpu{
     pub pc : u16,
     pub status : u8,
     pub memory : [u8 ; 0x10000],
+    pub stack : u8,
 }
 
 
@@ -34,9 +35,39 @@ impl Cpu{
             pc : 0b00000000,
             status : 0b00100000,
             memory : [0 ; 0x10000],
+            stack : 0,
 
         }}
+    pub fn  nextpc(&mut self){
+        if(self.pc != 0xFFFF){
+        self.pc = self.pc + 1;}
+        else{
+            println!(r"¯\_(ツ)_/¯");
+        }
 
+    }
+    pub fn push(&mut self, val : u8){
+        
+        if(self.stack != 0xFF){
+        self.stack += 1;
+        self.Write_memory(0x0100 + self.stack as u16, val);}
+        else{self.stack = 0x01;
+            self.Write_memory(0x0100 + self.stack as u16, val);}
+
+    }
+    pub fn pop(&mut self) -> u8{
+        let x : u8;
+        
+        if(self.stack != 0x00){
+            x = self.Read_memory(0x0100+self.stack as u16);
+            self.stack -=1;}
+        else{
+             x = self.Read_memory(0x0100+self.stack as u16);
+            self.stack = 0xFF;
+        }
+        x
+    
+    }
     pub fn Read_memory(&mut self, adress:u16) -> u8{
         self.memory[adress as usize]
     }
@@ -87,8 +118,45 @@ impl Cpu{
         }
     } 
      
+    pub fn AND(&mut self, mode :Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
+        self.reg_a = self.reg_a & self.Read_memory(adress) as u8;
+        if(self.reg_a == 0x00){
+            self.status = self.status | 0b00000010;
+        }
+        if (self.status >= 0b10000000){
+            self.status = self.status | 0b10000000;
+        }
+    }
+    pub fn CLV(&mut self){
+        self.status = self.status & 0b10111111;
+    }
+    pub fn CLI(&mut self){
+        self.status = self.status & 0b11111011;
+    }
+    pub fn CLD(&mut self){
+        self.status = self.status & 0b11110111;
+    }
+    pub fn CLC(&mut self){
+        self.status = self.status & 0b11111110;
+    }
+    pub fn BVS(&mut self,code : opcode){
+        let adress = self.Get_operand_adress(code.mode);
+        let x = self.Read_memory(adress);
+        if (self.status & 64 == 0b01000000){
+            if(  x >= 0b10000000){
+                self.pc -= !x as u16 + 1; 
+            }
+            else{
+                self.pc += x as u16;
+            }
+            
+        }
+        self.nextpc();
+    }
+  
     pub fn BRK(&mut self){
-            //push(self.pc); push(self.status);
+            self.push(self.status);//self.push(self.pc);
             self.status = self.status | 0b00010000;
             self.pc = 0x0000 | (self.memory[0xFFFE] as u16);
             self.pc = self.pc | ((self.memory[0xFFFE] as u16)*256);            
@@ -281,7 +349,6 @@ impl Cpu{
         self.Set_zero_negative(x);
     }
 
-    
     pub fn Set_zero_negative(&mut self, x:u8){
         if x == 0 {
             self.Set_zero_flag(true);
@@ -372,4 +439,17 @@ impl opcode{
  */
 
 fn main() {
+    let mut c = Cpu::new();
+    let b = opcode::new("LSR".to_string(),0x4a,1,2,Adressing_mode::Immediate);
+    c.Write_memory(0,0);
+    c.Write_memory(1,5);
+    c.Write_memory(0x0609,75);
+    c.Write_memory(5,10);
+    c.Write_memory(6,5);
+    c.reg_a = 0xf0;
+    c.reg_x = 1;
+    c.LSR(b);
+    println!("{}",c.status);
+    println!("{}",c.memory[0]);
+
 }
