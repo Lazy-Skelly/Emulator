@@ -707,14 +707,9 @@ impl Hash_code{
         c
     }
 }
-/*  ToDo:
-        Create Stack {$0100-$0200}
-
- */
 
 fn main() {
     let mut c = Cpu::new();
-//    let b = opcode::new("LSR".to_string(),0x4a,1,2,Adressing_mode::Immediate);
     c.Load([0xa9, 0xc0, 0xaa, 0xe8, 0x00].to_vec());
     let b = Hash_code::new();
     let mut i =1;
