@@ -4,6 +4,7 @@ use std::collections::HashMap;
 #[allow(non_snake_case)]
 #[allow(dead_code)]
 //NV1B DIZC are the flags
+#[derive(Copy, Clone)]
 pub enum Adressing_mode{
     Immediate,
     Zeropage,
@@ -16,6 +17,8 @@ pub enum Adressing_mode{
     Indirect_Y,
     No_Adress
    }
+   
+   
 pub struct Cpu{
     pub reg_a : u8,
     pub reg_x : u8,
@@ -120,8 +123,8 @@ impl Cpu{
         }
     } 
      
-    pub fn AND(&mut self, code :opcode){
-        let adress = self.Get_operand_adress(code.mode);
+    pub fn AND(&mut self, mode :Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
         self.reg_a = self.reg_a & self.Read_memory(adress) as u8;
         if self.reg_a == 0x00 {
             self.status = self.status | 0b00000010;
@@ -129,7 +132,6 @@ impl Cpu{
         if self.status >= 0b10000000 {
             self.status = self.status | 0b10000000;
         }
-        self.pc += code.length -1;
     }
     pub fn CLV(&mut self){
         self.status = self.status & 0b10111111;
@@ -143,8 +145,8 @@ impl Cpu{
     pub fn CLC(&mut self){
         self.status = self.status & 0b11111110;
     }
-    pub fn BVS(&mut self,code : opcode){
-        let adress = self.Get_operand_adress(code.mode);
+    pub fn BVS(&mut self,mode :Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
         let x = self.Read_memory(adress);
         if self.status & 64 == 0b01000000{
             if x >= 0b10000000{
@@ -155,7 +157,6 @@ impl Cpu{
             }
             
         }
-        self.pc += code.length -1;
     }
   
     pub fn BRK(&mut self){
@@ -181,116 +182,106 @@ impl Cpu{
         }         
     }
 
-    pub fn LDA(&mut self, code :opcode){
-        let adress = self.Get_operand_adress(code.mode);
+    pub fn LDA(&mut self, mode :Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
         let x = self.Read_memory(adress);
-        self.pc += code.length -1;
         self.reg_a = x;
         self.Set_zero_negative(x);
-        self.pc += code.length -1;
     }
     
-    pub fn LDX(&mut self, code :opcode){
-        let adress = self.Get_operand_adress(code.mode);
+    pub fn LDX(&mut self, mode :Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
         let x = self.Read_memory(adress);
-        self.pc += code.length -1;
         self.reg_x = x;
         self.Set_zero_negative(x);
-        self.pc += code.length -1;
     }
 
-    pub fn LDY(&mut self, code :opcode){
-        let adress = self.Get_operand_adress(code.mode);
+    pub fn LDY(&mut self, mode :Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
         let x = self.Read_memory(adress);
-        self.pc += code.length -1;
         self.reg_y = x;
         self.Set_zero_negative(x);
-        self.pc += code.length -1;
     }
     
-    pub fn LSR(&mut self, code :opcode){
-        if let Adressing_mode::No_Adress = code.mode{
+    pub fn LSR(&mut self, mode :Adressing_mode){
+        if let Adressing_mode::No_Adress = mode{
             self.Set_carry_flag((self.reg_a & 0x01)== 1);
             self.reg_a = self.reg_a >> 1;
             self.Set_zero_negative(self.reg_a);
         }else{
-            let adress = self.Get_operand_adress(code.mode);
+            let adress = self.Get_operand_adress(mode);
             self.Set_carry_flag((self.memory[adress as usize] & 0x01)== 1);
             self.memory[adress as usize] = self.memory[adress as usize] >> 1;
             self.Set_zero_negative(self.memory[adress as usize]);
         }
-        self.pc += code.length -1;
     }
     
-    pub fn NOP(&mut self, _code :opcode){}
+    pub fn NOP(&mut self){}
     
-    pub fn ORA(&mut self, code :opcode){
-        let adress = self.Get_operand_adress(code.mode);
+    pub fn ORA(&mut self, mode :Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
         let x = self.Read_memory(adress);
         self.reg_a = self.reg_a | x;
-        self.pc += code.length -1;
     }
     
-    pub fn PHA(&mut self, _code :opcode){
+    pub fn PHA(&mut self){
         self.push(self.reg_a);
     }
     
-    pub fn PHP(&mut self, _code :opcode){
+    pub fn PHP(&mut self){
         self.push(self.status);
     }
     
-    pub fn PLA(&mut self, _code :opcode){
+    pub fn PLA(&mut self){
         self.reg_a = self.pop();
         self.Set_zero_negative(self.reg_a);
     }
     
-    pub fn PLP(&mut self, _code :opcode){
+    pub fn PLP(&mut self){
         self.status = self.pop();
     }
     
-    pub fn ROL(&mut self, code :opcode){
-        if let Adressing_mode::No_Adress = code.mode{
+    pub fn ROL(&mut self, mode :Adressing_mode){
+        if let Adressing_mode::No_Adress = mode{
             let c = self.reg_a & 0x80 == 0x80;
             self.reg_a = self.reg_a << 1;
             if self.status & 0x01 == 0x01 {
                 self.reg_a += 1;
             }
             self.Set_carry_flag(c);
-            self.pc += code.length -1;
         }else{
-            let adress = self.Get_operand_adress(code.mode);
+            let adress = self.Get_operand_adress(mode);
             let c = self.memory[adress as usize] & 0x80 == 0x80;
             self.memory[adress as usize] = self.memory[adress as usize] << 1;
             if self.status & 0x01 == 0x01 {
                 self.memory[adress as usize] += 1;
             }
             self.Set_carry_flag(c);
-            self.pc += code.length -1;
         }
     }
     
-    pub fn ROR(&mut self, code :opcode){
-        if let Adressing_mode::No_Adress = code.mode{
+    pub fn ROR(&mut self, mode :Adressing_mode){
+        if let Adressing_mode::No_Adress = mode{
             let c = self.reg_a & 0x01 == 0x01;
             self.reg_a = self.reg_a >> 1;
             if self.status & 0x01 == 0x01 {
                 self.reg_a += 0x80;
             }
             self.Set_carry_flag(c);
-            self.pc += code.length -1;
+
         }else{
-            let adress = self.Get_operand_adress(code.mode);
+            let adress = self.Get_operand_adress(mode);
             let c = self.memory[adress as usize] & 0x01 == 0x01;
             self.memory[adress as usize] = self.memory[adress as usize] >> 1;
             if self.status & 0x01 == 0x01 {
                 self.memory[adress as usize] += 0x80;
             }
             self.Set_carry_flag(c);
-            self.pc += code.length -1;
+
         }
     }
     
-    pub fn RTI(&mut self, _code :opcode){
+    pub fn RTI(&mut self){
         self.status = self.pop();
         let low = self.pop() as u16;
         let mut high = self.pop() as u16;
@@ -298,7 +289,7 @@ impl Cpu{
         self.pc = high | low;
     }
     
-    pub fn RTS(&mut self, _code :opcode){
+    pub fn RTS(&mut self){
         self.status = self.pop();
         let low = self.pop() as u16;
         let mut high = self.pop() as u16;
@@ -306,9 +297,9 @@ impl Cpu{
         self.pc = high | low -1;
     }
     
-    pub fn SBC(&mut self, code :opcode){
+    pub fn SBC(&mut self, mode :Adressing_mode){
         
-        let adress = self.Get_operand_adress(code.mode);
+        let adress = self.Get_operand_adress(mode);
         let data = self.Read_memory(adress);
         let data = (data as i8).wrapping_neg().wrapping_sub(1);
         let data = data as u8;
@@ -330,37 +321,33 @@ impl Cpu{
         
         self.reg_a = result as u8;
         self.Set_zero_negative(self.reg_a);
-        self.pc += code.length -1;
     }
     
-    pub fn SEC(&mut self, _code :opcode){
+    pub fn SEC(&mut self){
         self.Set_carry_flag(true);
     }
     
-    pub fn SED(&mut self, _code :opcode){
+    pub fn SED(&mut self){
         self.Set_decimal_flag(true);
     }
     
-    pub fn SEI(&mut self, _code :opcode){
+    pub fn SEI(&mut self){
         self.Set_interupt_flag(true);
     }
     
-    pub fn STA(&mut self, code :opcode){
-        let adress = self.Get_operand_adress(code.mode);
+    pub fn STA(&mut self, mode :Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
         self.Write_memory(adress, self.reg_a);
-        self.pc += code.length-1;
     }
     
-    pub fn STX(&mut self, code :opcode){
-        let adress = self.Get_operand_adress(code.mode);
+    pub fn STX(&mut self, mode :Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
         self.Write_memory(adress, self.reg_x);
-        self.pc += code.length-1;
     }
     
-    pub fn STY(&mut self, code :opcode){
-        let adress = self.Get_operand_adress(code.mode);
+    pub fn STY(&mut self, mode :Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
         self.Write_memory(adress, self.reg_y);
-        self.pc += code.length-1;
     }
         
     pub fn TAX(&mut self){
@@ -374,7 +361,13 @@ impl Cpu{
         let x = self.reg_y;
         self.Set_zero_negative(x);
     }
-
+    
+    pub fn TSX(&mut self){
+        self.reg_x = self.pop();
+        let x = self.reg_x;
+        self.Set_zero_negative(x);
+    }
+    
     pub fn TXA(&mut self){
         self.reg_a = self.reg_x;
         let x = self.reg_a;
@@ -465,11 +458,187 @@ impl Cpu{
     }
     
     pub fn Run(&mut self){
+        let hash = HashCode::new();
         loop{
         let code = self.Read_memory(self.pc);
-        self.pc += 1;
+        let op = hash.code_list.get(&code);
+        let op = op.unwrap();
         
-            
+        self.pc = self.pc.wrapping_add(1);
+        let name = op.name.as_str();
+        match name{
+            "ADC" =>{
+                
+            },
+            "AND" =>{
+                self.AND(op.mode);
+            },
+            "ASL" =>{
+                
+            },
+            "BCC" =>{
+                
+            },
+            "BCS" =>{
+                
+            },
+            "BEQ" =>{
+                
+            },
+            "BIT" =>{
+                
+            },
+            "BMI" =>{
+                
+            },
+            "BNE" =>{
+                
+            },
+            "BPL" =>{
+                
+            },
+            "BRK" =>{
+                self.BRK();
+                break;
+            },
+            "BVC" =>{
+                
+            },
+            "BVS" =>{
+                self.BVS(op.mode);
+            },
+            "CLC" =>{
+                self.CLC();
+            },
+            "CLD" =>{
+                self.CLD();
+            },
+            "CLI" =>{
+                self.CLI();
+            },
+            "CLV" =>{
+                self.CLV();  
+            },
+            "CMP" =>{
+                
+            },
+            "CPX" =>{
+                
+            },
+            "CPY" =>{
+                
+            },
+            "DEC" =>{
+                
+            },
+            "DEX" =>{
+                
+            },
+            "DEY" =>{
+                
+            },
+            "EOR" =>{
+                
+            },
+            "INC" =>{
+                
+            },
+            "INX" =>{
+                self.INX();
+            },
+            "INY" =>{
+                
+            },
+            "JMP" =>{
+                
+            },
+            "JSR" =>{
+                
+            },
+            "LDA" =>{
+                self.LDA(op.mode);
+            },
+            "LDX" =>{
+                self.LDX(op.mode);
+            },
+            "LDY" =>{
+                self.LDY(op.mode);
+            },
+            "LSR" =>{
+                self.LSR(op.mode);
+            },
+            "NOP" =>{
+                self.NOP();
+            },
+            "ORA" =>{
+                self.ORA(op.mode);
+            },
+            "PHA" =>{
+                self.PHA();
+            },
+            "PHP" =>{
+                self.PHP();
+            },
+            "PLA" =>{
+                self.PLA();
+            },
+            "PLP" =>{
+                self.PLP();
+            },
+            "ROL" =>{
+                self.ROL(op.mode);
+            },
+            "ROR" =>{
+                self.ROR(op.mode);
+            },
+            "RTI" =>{
+                self.RTI();
+            },
+            "RTS" =>{
+                self.RTS();
+            },
+            "SBC" =>{
+                self.SBC(op.mode);
+            },
+            "SEC" =>{
+                self.SEC();
+            },
+            "SED" =>{
+                self.SED();
+            },
+            "SEI" =>{
+                self.SEI();
+            },
+            "STA" =>{
+                self.STA(op.mode);
+            },
+            "STX" =>{
+                self.STX(op.mode);
+            },
+            "STY" =>{
+                self.STY(op.mode);
+            },
+            "TAX" =>{
+                self.TAX();
+            },
+            "TAY" =>{
+                self.TAY();
+            },
+            "TSX" =>{
+                self.TSX();
+            },
+            "TXA" =>{
+                self.TXA();
+            },
+            "TXS" =>{
+                self.TXS();
+            },
+            "TYA" =>{
+                self.TYA();
+            },
+            _ => ()
+        }
+        self.pc += op.length - 1 ;  
         }
     }
     
@@ -489,13 +658,14 @@ impl opcode{
     }
 }
 
-pub struct Hash_code{
+
+pub struct HashCode{
     code_list :HashMap<u8, opcode>
 }
 
-impl Hash_code{
+impl HashCode{
     fn new() -> Self {
-        let mut c = Hash_code {code_list: HashMap::<u8,opcode>::new()};
+        let mut c = HashCode {code_list: HashMap::<u8,opcode>::new()};
         //ADC
         c.code_list.insert(0x69,opcode::new("ADC".to_string(),0x69,2,2,Adressing_mode::Immediate));
         c.code_list.insert(0x65,opcode::new("ADC".to_string(),0x65,2,3,Adressing_mode::Zeropage));
@@ -707,14 +877,23 @@ impl Hash_code{
         c
     }
 }
+/*  ToDo:
+        Create Stack {$0100-$0200}
+
+ */
 
 fn main() {
     let mut c = Cpu::new();
+//    let b = opcode::new("LSR".to_string(),0x4a,1,2,Adressing_mode::Immediate);
     c.Load([0xa9, 0xc0, 0xaa, 0xe8, 0x00].to_vec());
-    let b = Hash_code::new();
-    let mut i =1;
-    for (key, value) in &b.code_list{
+    c.Run();
+    let b = HashCode::new();
+    println!("{}",c.reg_a);
+    println!("{}",c.reg_x);
+    println!("{}",c.pc);
+   /* for (key, value) in &b.code_list{
         println!("{}. {key:#X}: {}: {}",i,value.name, value.length);
         i += 1;
-    }
+    } */
+    
 }
