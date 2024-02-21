@@ -122,11 +122,23 @@ impl Cpu{
         else{false}
 
     }
-    pub fn neg(x :u8)-> u8{
-        (!x + 1)
+    pub fn sign(&mut self,x : u8) -> i8{
+        if self.is_negative(x){(-1)}else{1}
+    }
+    pub fn neg(&mut self,x :u8)-> u8{
+        if self.is_negative(x){
+        (!x + 1)}
+        else{
+            x
+        }
 
     }
-    pub fn ADC(&mut self, code:opcode){ //STILL BEING TESTED THIS IS NOT FULL CODE
+  
+
+
+    
+    
+    /* pub fn ADC(&mut self, code:opcode){ //STILL BEING TESTED THIS IS NOT FULL CODE
         let adress = self.Get_operand_adress(code.mode);
         let value = self.Read_memory(adress);
         if (!self.is_negative(value)){
@@ -141,11 +153,66 @@ impl Cpu{
                 
 
 
-
-                
-
         }}
         else{}}
+
+    
+    */
+    pub fn is_overflow(&mut X : u8,&mut Y : u8){
+        {(((X & 0b01111111)+(Y & 0b01111111))/128) ^ (((X as u16 +Y as u16) & 256)/256) as u8 }
+    }
+
+
+    pub fn ADC(&mut self,mode :Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
+        let value = self.Read_memory(adress);
+        if (adress as u16 + value as u16)>0xFF{self.Set_carry_flag(true)}else{self.Set_carry_flag(false)}
+        if ( self.is_overflow(value,self.reg_a )== 1){self.Set_oveflow_flag(true));}else{self.Set_oveflow_flag(false);}
+        if (no_overflow){self.reg_a = self.reg_a + value;
+        if(is_overflow(self.reg_a,1)){self.Set_oveflow_flag(true);self.reg_a = (self.reg_a as u16 + 1 )& 0xFF as u8;}else{self.Set_oveflow_flag(false);self.reg_a = self.reg_a + 1;}}
+        else{self.reg_a = ((self.reg_a as u16 + value as u16) & 0xFF) as u8 + 1;}
+    }
+    
+    pub fn CMP(&mut self,mode : Adressing_mode){
+        let adress = self.Get_operand_adress(mode);
+        let value = self.Read_memory(adress);
+        if(neg(self.reg_a) >= neg(value)){self.Set_carry_flag(true);self.Set_zero_flag(false);}else{self.Set_carry_flag(false);self.Set_zero_flag(true);}
+
+    }
+    pub fn CPX(&mut self){
+        if(neg(self.reg_a) >= neg(self.reg_x)){self.Set_carry_flag(true);self.Set_zero_flag(false);}else{self.Set_carry_flag(false);self.Set_zero_flag(true);
+    }
+    pub fn CPY(&mut self){
+        if(neg(self.reg_a) >= neg(self.reg_y)){self.Set_carry_flag(true);self.Set_zero_flag(false);}else{self.Set_carry_flag(false);self.Set_zero_flag(true);
+    }
+    pub fn EOR(&mut self){}
+    pub fn DEC(&mut self,mode : Adressing_mode){      
+        let adress = self.Get_operand_adress(mode);
+        let   value;
+        match mode{
+            Adressing_mode::Zeropage =>value = self.Read_memory(adress); self.Write_memory(adress,value - 1);
+            Adressing_mode::Zeropage_X=> value = self.Read_memory(adress); self.Write_memory(adress,value - 1);
+            Adressing_mode::Absolute => value = self.Read_memory_16(adress); self.Write_memory_16(adress,value - 1);
+            Adressing_mode::Absolute_Y => value = self.Read_memory_16(adress); self.Write_memory_16(adress,value - 1);
+
+        }
+        if ((value - 1) == 0){self.Set_zero_flag(true);}else{self.Set_zero_flag(false);}
+        if (self.is_negative(value-1)){self.Set_negative_flag(true);}else{self.Set_negative_flag(false);}
+        }
+    pub fn DEY(&mut self){
+        self.reg_y -= 1; 
+        if ((self.reg_y - 1) == 0){self.Set_zero_flag(true);}else{self.Set_zero_flag(false);}
+        if (self.is_negative(self.reg_y - 1)){self.Set_negative_flag(true);}else{self.Set_negative_flag(false);}
+    }
+    pub fn DEX(&mut self){
+        self.reg_x -= 1; 
+        if ((self.reg_x - 1) == 0){self.Set_zero_flag(true);}else{self.Set_zero_flag(false);}
+        if (self.is_negative(self.reg_x - 1)){self.Set_negative_flag(true);}else{self.Set_negative_flag(false);}
+        
+    }
+    pub fn JMP(&mut self,){}
+    
+    
     pub fn ASL(&mut self,mode :Adressing_mode){
         let adress = self.Get_operand_adress(mode);
         let value = self.Read_memory(adress);
