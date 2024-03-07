@@ -162,10 +162,10 @@ impl Cpu{
 
     }
     pub fn CPX(&mut self){
-        if(neg(self.reg_a) >= neg(self.reg_x)){self.Set_carry_flag(true);self.Set_zero_flag(false);}else{self.Set_carry_flag(false);self.Set_zero_flag(true);
+        if(neg(self.reg_a) >= neg(self.reg_x)){self.Set_carry_flag(true);self.Set_zero_flag(false);}else{self.Set_carry_flag(false);self.Set_zero_flag(true);}
     }
     pub fn CPY(&mut self){
-        if(neg(self.reg_a) >= neg(self.reg_y)){self.Set_carry_flag(true);self.Set_zero_flag(false);}else{self.Set_carry_flag(false);self.Set_zero_flag(true);
+        if(neg(self.reg_a) >= neg(self.reg_y)){self.Set_carry_flag(true);self.Set_zero_flag(false);}else{self.Set_carry_flag(false);self.Set_zero_flag(true);}
     }
     pub fn EOR(&mut self){}
     pub fn DEC(&mut self,mode : Adressing_mode){      
@@ -296,7 +296,9 @@ impl Cpu{
         if (self.status & 64 == 0b01000000){
             if(  x >= 0b10000000){
                 self.pc -= !x as u16 + 1; 
-
+			}	
+		}
+	}
     pub fn NOP(&mut self){}
     
     pub fn ORA(&mut self, mode :Adressing_mode){
@@ -846,6 +848,7 @@ pub fn BIT(){ //NEEDS TESTING
         }
     }
 }
+
 
 
 #[allow(non_camel_case_types)]
