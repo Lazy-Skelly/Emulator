@@ -149,7 +149,7 @@ impl Cpu{
         let adress = self.Get_operand_adress(mode);
         let value = self.Read_memory(adress);
         if (adress as u16 + value as u16)>0xFF{self.Set_carry_flag(true)}else{self.Set_carry_flag(false)}
-        if ( self.is_overflow(value,self.reg_a )== 1){self.Set_oveflow_flag(true));}else{self.Set_oveflow_flag(false);}
+        if ( self.is_overflow(value,self.reg_a )== 1){self.Set_oveflow_flag(true);}else{self.Set_oveflow_flag(false);}
         if (no_overflow){self.reg_a = self.reg_a + value;
         if(is_overflow(self.reg_a,1)){self.Set_oveflow_flag(true);self.reg_a = (self.reg_a as u16 + 1 )& 0xFF as u8;}else{self.Set_oveflow_flag(false);self.reg_a = self.reg_a + 1;}}
         else{self.reg_a = ((self.reg_a as u16 + value as u16) & 0xFF) as u8 + 1;}
